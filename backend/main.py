@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 import uvicorn
 
@@ -25,31 +26,38 @@ def health_check():
     return {"status": "healthy"}
 
 @app.post("/analyze/text")
-def analyze_text(payload: dict, db: Session = Depends(get_db)):
+async def analyze_text(payload: dict, db: Session = Depends(get_db)):
     text = payload.get("text", "")
     if not text:
         raise HTTPException(status_code=400, detail="Text is required")
-    
-    # Process text
+
+    # Run CPU-bound model inference in a thread so the event loop stays free
     clean_text = get_clean_text(text)
-    categories = predict_toxicity(clean_text)
-    toxicity_score = categories['toxic']
-    highlighted_tokens = get_highlighted_tokens(text) # Use original text for visualization
-    
+
+    # predict_toxicity already gives us baseline — pass it to highlight
+    # so it doesn't re-run the full model for the baseline score
+    categories = await run_in_threadpool(predict_toxicity, clean_text)
+    toxicity_score = categories["toxic"]
+
+    # Pass baseline_score so get_highlighted_tokens skips the extra base inference call
+    highlighted_tokens = await run_in_threadpool(
+        get_highlighted_tokens, text, toxicity_score
+    )
+
     verdict = "TOXIC" if toxicity_score > 0.5 else "CLEAN"
-    
+
     # Save to history
     new_analysis = Analysis(
         input_type="text",
         original_text=text,
         toxicity_score=toxicity_score,
         categories_json=categories,
-        verdict=verdict
+        verdict=verdict,
     )
     db.add(new_analysis)
     db.commit()
     db.refresh(new_analysis)
-    
+
     return {
         "id": new_analysis.id,
         "original_text": text,
@@ -58,39 +66,39 @@ def analyze_text(payload: dict, db: Session = Depends(get_db)):
         "categories": categories,
         "highlighted_tokens": highlighted_tokens,
         "verdict": verdict,
-        "model_used": "toxic-bert"
+        "model_used": "toxic-bert",
     }
 
 @app.post("/analyze/image")
 async def analyze_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
     try:
         contents = await file.read()
-        extracted_text = extract_text_from_image(contents)
-        
+
+        # OCR is CPU-heavy — run in thread
+        extracted_text = await run_in_threadpool(extract_text_from_image, contents)
+
         if not extracted_text.strip():
-            return {
-                "error": "No text detected in image",
-                "extracted_text": ""
-            }
-            
-        # Same logic as text analysis
-        categories = predict_toxicity(extracted_text)
-        toxicity_score = categories['toxic']
-        highlighted_tokens = get_highlighted_tokens(extracted_text)
-        
+            return {"error": "No text detected in image", "extracted_text": ""}
+
+        categories = await run_in_threadpool(predict_toxicity, extracted_text)
+        toxicity_score = categories["toxic"]
+        highlighted_tokens = await run_in_threadpool(
+            get_highlighted_tokens, extracted_text, toxicity_score
+        )
+
         verdict = "TOXIC" if toxicity_score > 0.5 else "CLEAN"
-        
+
         new_analysis = Analysis(
             input_type="image",
             original_text=extracted_text,
             toxicity_score=toxicity_score,
             categories_json=categories,
-            verdict=verdict
+            verdict=verdict,
         )
         db.add(new_analysis)
         db.commit()
         db.refresh(new_analysis)
-        
+
         return {
             "id": new_analysis.id,
             "original_text": extracted_text,
@@ -99,7 +107,7 @@ async def analyze_image(file: UploadFile = File(...), db: Session = Depends(get_
             "categories": categories,
             "highlighted_tokens": highlighted_tokens,
             "verdict": verdict,
-            "model_used": "toxic-bert"
+            "model_used": "toxic-bert",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
