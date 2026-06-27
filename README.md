@@ -1,6 +1,6 @@
 # ☢️ ToxicScan: AI-Powered Comment Guardian
 
-🚀 **Live Demo:** [https://toxic-comment-analyzer-tau.vercel.app](https://toxic-comment-analyzer-tau.vercel.app)  
+🚀 **Live Demo:** [https://toxic-comment-analyzer-neon.vercel.app](https://toxic-comment-analyzer-neon.vercel.app)  
 📦 **GitHub:** [https://github.com/shubhamgautam05/Toxic_Comment_Analyzer](https://github.com/shubhamgautam05/Toxic_Comment_Analyzer)  
 ⚙️ **Backend API:** [https://toxic-comment-analyzer-2dqx.onrender.com](https://toxic-comment-analyzer-2dqx.onrender.com)  
 📖 **API Docs:** [https://toxic-comment-analyzer-2dqx.onrender.com/docs](https://toxic-comment-analyzer-2dqx.onrender.com/docs)
