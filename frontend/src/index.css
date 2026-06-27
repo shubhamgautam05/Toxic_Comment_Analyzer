@@ -1,0 +1,59 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@700;800&display=swap');
+
+@theme {
+  --color-background: #FAFAF7;
+  --color-primary: #7C3AED;
+  --color-success: #22C55E;
+  --color-danger: #EF4444;
+  --color-warning: #F59E0B;
+  --font-dmsans: "DM Sans", sans-serif;
+  --font-syne: "Syne", sans-serif;
+}
+
+body {
+  @apply bg-background text-slate-900 font-dmsans overflow-x-hidden;
+  margin: 0;
+}
+
+h1, h2, h3, h4 {
+  @apply font-syne text-slate-900;
+}
+
+/* Custom wavy underline animation */
+.toxic-underline {
+  @apply relative;
+}
+
+.toxic-underline::after {
+  content: '';
+  @apply absolute left-0 -bottom-1 w-full h-1 bg-danger;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 4'%3E%3Cpath d='M0 3.5c5 0 5-3 10-3s5 3 10 3 5-3 10-3 5 3 10 3' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E");
+  mask-size: 10px 4px;
+  animation: wavy 1s linear infinite;
+}
+
+@keyframes wavy {
+  0% { mask-position: 0 0; }
+  100% { mask-position: 10px 0; }
+}
+
+.glass-card {
+  @apply bg-white/40 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl;
+}
+
+.mesh-gradient {
+  background-color: #fafaf7;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+  /* Adjusting to the violet/green vibe */
+  background: radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.05), transparent),
+              radial-gradient(circle at 10% 10%, rgba(34, 197, 94, 0.05), transparent);
+}
+
+.dot-grid {
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 20px 20px;
+}
